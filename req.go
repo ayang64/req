@@ -18,7 +18,7 @@ func Decode[T any](r io.Reader) (T, error) {
 	return v, nil
 }
 
-func Every[T interface{ Page() (int, int) }](ctx context.Context, m string, u string, h http.Header, v url.Values, b io.Reader, s map[int]struct{}) ([]T, error) {
+func Every[T interface{ More() bool }](ctx context.Context, m string, u string, h http.Header, v url.Values, b io.Reader, s map[int]struct{}) ([]T, error) {
 	var a []T
 	for v, err := range All[T](ctx, m, u, h, v, b, s) {
 		if err != nil {
@@ -29,18 +29,14 @@ func Every[T interface{ Page() (int, int) }](ctx context.Context, m string, u st
 	return a, nil
 }
 
-func All[T interface{ Page() (int, int) }](ctx context.Context, m string, u string, h http.Header, v url.Values, b io.Reader, s map[int]struct{}) iter.Seq2[T, error] {
+func All[T interface{ More() bool }](ctx context.Context, m string, u string, h http.Header, v url.Values, b io.Reader, s map[int]struct{}) iter.Seq2[T, error] {
 	return func(yield func(T, error) bool) {
-		for cur, limit := 0, 0; ; {
+		for {
 			pl, err := Send[T](ctx, m, u, h, v, b, s)
 			if !yield(pl, err) {
 				break
 			}
-			if err != nil {
-				break
-			}
-			cur, limit = pl.Page()
-			if cur >= limit {
+			if err != nil || !pl.More() {
 				break
 			}
 		}

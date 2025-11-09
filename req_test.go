@@ -17,8 +17,8 @@ type Payload struct {
 	Limit int    `json:"limit"`
 }
 
-func (p Payload) Page() (int, int) {
-	return p.Cur, p.Limit
+func (p Payload) More() bool {
+	return p.Cur <= p.Limit
 }
 
 func TestEvery(t *testing.T) {
